@@ -47,9 +47,13 @@
 AudioSynthWaveform          waveform1; // To create the "beep" sfx
 AudioInputI2S               i2s2; // I2S input from microphone on audio shield
 AudioPlaySdWavX              playWav1; // Play 44.1kHz 16-bit PCM greeting WAV file
+
+// Outputs
 AudioRecordQueue            queue1; // Creating an audio buffer in memory before saving to SD
 AudioMixer4                 mixer; // Allows merging several inputs to same output
 AudioOutputI2S              i2s1; // I2S interface to Speaker/Line Out on Audio shield
+
+// Connections
 AudioConnection patchCord1(waveform1, 0, mixer, 0); // wave to mixer 
 AudioConnection patchCord3(playWav1, 0, mixer, 1); // wav file playback mixer
 AudioConnection patchCord4(mixer, 0, i2s1, 0); // mixer output to speaker (L)
@@ -90,21 +94,22 @@ byte byte1, byte2, byte3, byte4;
 
 
 void setup() {
-
+  //Initialize the USB serial port with [input] baud rate
   Serial.begin(9600);
   while (!Serial && millis() < 5000) {
     // wait for serial port to connect.
   }
   Serial.println("Serial set up correctly");
-  Serial.printf("Audio block set to %d samples\n",AUDIO_BLOCK_SAMPLES);
+  Serial.printf("Audio block set to %d samples\n",AUDIO_BLOCK_SAMPLES); // TODO: AUDIO_BLOCK_SAMPLES??
   print_mode();
   // Configure the input pins
   pinMode(HOOK_PIN, INPUT_PULLUP);
   pinMode(PLAYBACK_BUTTON_PIN, INPUT_PULLUP);
 
-  // Audio connections require memory, and the record queue
-  // uses this memory to buffer incoming audio.
-  AudioMemory(60);
+  // Audio connections require memory, and the record queue uses this memory to buffer incoming audio.
+  // The [numberBlocks] input specifies how much memory to reserve for audio data. Each block holds 128 audio samples, or approx 2.9 ms of sound. 
+  // Usually an initial guess is made for numberBlocks and the actual usage is checked with AudioMemoryUsageMax().
+  AudioMemory(60);  // TODO: may 60 is too small 
 
   // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
@@ -127,9 +132,10 @@ void setup() {
   SPI.setSCK(SDCARD_SCK_PIN);
   if (!(SD.begin(SDCARD_CS_PIN))) 
   {
-    // stop here if no SD card, but print a message
+    Serial.println("Unable to access the SD card. Insert SD card and restart the system.");
+    // TODO: blink e.g. blue light
+    // stop here if no SD card
     while (1) {
-      Serial.println("Unable to access the SD card");
       delay(500);
     }
   }
